@@ -1,0 +1,5 @@
+aws config
+
+terraform init
+terraform plan -out vpc.tfplan
+terraform apply "vpc.tfplan"
