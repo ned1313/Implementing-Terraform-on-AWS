@@ -24,7 +24,7 @@ variable "public_subnets" {
 
 provider "aws" {
   version = "~> 2.0"
-  region = var.region
+  region  = var.region
 }
 
 #############################################################################
@@ -41,15 +41,15 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "2.33.0"
 
-  name = "main-vpc"
+  name = "dev-vpc"
   cidr = var.vpc_cidr_range
 
-  azs = slice(data.aws_availability_zones.available.names, 0, 1)
+  azs            = slice(data.aws_availability_zones.azs.names, 0, 1)
   public_subnets = var.public_subnets
 
   tags = {
-      Environment = "dev"
-      Team = "infra"
+    Environment = "dev"
+    Team        = "infra"
   }
 
 }

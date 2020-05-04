@@ -8,7 +8,7 @@ variable "region" {
 }
 
 variable "peering_users" {
-    type = list(string)
+  type = list(string)
 }
 
 #############################################################################
@@ -17,15 +17,15 @@ variable "peering_users" {
 
 provider "aws" {
   version = "~> 2.0"
-  region = var.region
-  alias = "infra"
+  region  = var.region
+  alias   = "infra"
   profile = "infra"
 }
 
 provider "aws" {
   version = "~> 2.0"
-  region = var.region
-  alias = "sec"
+  region  = var.region
+  alias   = "sec"
   profile = "sec"
 }
 
@@ -34,11 +34,11 @@ provider "aws" {
 #############################################################################
 
 data "aws_caller_identity" "infra" {
-    provider = aws.infra
+  provider = aws.infra
 }
 
 data "aws_caller_identity" "sec" {
-    provider = aws.sec
+  provider = aws.sec
 }
 
 #############################################################################
@@ -48,8 +48,8 @@ data "aws_caller_identity" "sec" {
 # Create a policy to allow peering acceptance
 
 resource "aws_iam_role_policy" "peering_policy" {
-  name = "vpc_peering_policy"
-  role = aws_iam_role.peer_role.id
+  name     = "vpc_peering_policy"
+  role     = aws_iam_role.peer_role.id
   provider = aws.sec
 
   policy = <<-EOF
@@ -72,7 +72,7 @@ resource "aws_iam_role_policy" "peering_policy" {
 # Create a role that can be assumed by the infra account
 
 resource "aws_iam_role" "peer_role" {
-  name = "peer_role"
+  name     = "peer_role"
   provider = aws.sec
 
   assume_role_policy = <<-EOF
@@ -95,8 +95,8 @@ resource "aws_iam_role" "peer_role" {
 # Create a group that can accept peering connections
 
 resource "aws_iam_group" "peering" {
-  
-  name = "VPCPeering"
+
+  name     = "VPCPeering"
   provider = aws.infra
 
 }
@@ -104,7 +104,7 @@ resource "aws_iam_group" "peering" {
 # Add members to the group
 
 resource "aws_iam_group_membership" "peering-members" {
-  name = "VPCPeeringMembers"
+  name     = "VPCPeeringMembers"
   provider = aws.infra
 
   users = var.peering_users
@@ -115,8 +115,9 @@ resource "aws_iam_group_membership" "peering-members" {
 # Create a group policy that can assume the role in sec
 
 resource "aws_iam_group_policy" "peering-policy" {
-    name  = "peering-policy"
-  group = aws_iam_group.peering.id
+  name     = "peering-policy"
+  group    = aws_iam_group.peering.id
+  provider = aws.infra
 
   policy = <<EOF
 {

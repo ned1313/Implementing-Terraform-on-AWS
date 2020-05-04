@@ -1,5 +1,16 @@
-aws config
+# Run the aws configure command to set your access and secret keys
+aws configure
 
+# Rename the terraform.tfvars.example file to terraform.tfvars and change the region
+# to your desired region
+
+# Initialize the terraform configuration
 terraform init
+
+# Plan the terraform deployment
 terraform plan -out vpc.tfplan
+
+# Apply the deployment
 terraform apply "vpc.tfplan"
+
+# Do not destroy the VPC until you have completed the next module
