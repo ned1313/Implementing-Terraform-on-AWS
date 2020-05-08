@@ -23,7 +23,7 @@ variable "private_subnets" {
   default = ["10.0.100.0/24", "10.0.101.0/24"]
 }
 
-variable "infra_subnets" {
+variable "intra_subnets" {
   type    = list(string)
   default = ["10.0.200.0/24", "10.0.201.0/24"]
 }
@@ -35,6 +35,7 @@ variable "infra_subnets" {
 provider "aws" {
   version = "~> 2.0"
   region  = var.region
+  profile = "sec"
 }
 
 #############################################################################
@@ -56,10 +57,10 @@ module "vpc" {
   name = "sec-vpc"
   cidr = var.vpc_cidr_range
 
-  azs             = slice(data.aws_availability_zones.available.names, 0, 1)
+  azs             = slice(data.aws_availability_zones.azs.names, 0, 1)
   public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
-  infra_subnets   = var.infra_subnets
+  intra_subnets   = var.intra_subnets
 
   tags = {
     Environment = "all"

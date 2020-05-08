@@ -10,3 +10,13 @@ aws configure --profile infra
 aws configure --profile sec
 
 # Provide the Access and Secret keys
+
+# Initialize terraform
+
+terraform init
+
+# Run terraform plan
+terraform plan -out roles.tfplan
+
+# Run terraform apply
+terraform apply roles.tfplan

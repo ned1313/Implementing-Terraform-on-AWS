@@ -58,11 +58,11 @@ resource "aws_iam_role_policy" "peering_policy" {
     "Statement": [
       {
         "Action": [
-          "ec2:AcceptVpcPeeringConnection"
+          "ec2:AcceptVpcPeeringConnection",
+          "ec2:DescribeVpcPeeringConnections"
         ],
         "Effect": "Allow",
-        "Resource": ["arn:aws:ec2:*:*:vpc-peering-connection/*",
-                "arn:aws:ec2:*:*:vpc/*"]
+        "Resource": "*"
       }
     ]
   }
@@ -129,4 +129,12 @@ resource "aws_iam_group_policy" "peering-policy" {
   }
 }
 EOF
+}
+
+#############################################################################
+# OUTPUTS
+############################################################################# 
+
+output "peer_role_arn" {
+  value = aws_iam_role.peer_role.arn
 }
