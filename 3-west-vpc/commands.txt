@@ -1,0 +1,8 @@
+# Initialize the terraform configuration
+terraform init
+
+# Plan the terraform deployment
+terraform plan -out vpc.tfplan
+
+# Apply the deployment
+terraform apply "vpc.tfplan"
