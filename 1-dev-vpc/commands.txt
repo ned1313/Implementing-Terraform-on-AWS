@@ -18,7 +18,7 @@ terraform apply "vpc.tfplan"
 # Module 2 commands
 
 # Rename the peering configuration
-ren peering.tf.example peering.tf
+ren peering.tf.rename peering.tf
 
 # Run terraform plan
 terraform plan -var peer_role_arn="PEERING_ROLE_ARN" -var destination_vpc_id="SEC_VPC_ID" -out peer.tfplan
