@@ -1,0 +1,16 @@
+# We are going to create the CodeCommit, CodeBuild, and CodePipeline objects
+# This will NOT add code to CodeCommit, that must be done separately
+# You will need the name of the state_bucket created in 4-remote-state-setup
+
+# Rename terraform.tfvars.example to terraform.tfvars and update values
+
+# Initialize the terraform configuration
+terraform init
+
+# Plan the terraform deployment
+terraform plan -out code.tfplan
+
+# Apply the deployment
+terraform apply "code.tfplan"
+
+
