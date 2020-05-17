@@ -13,9 +13,9 @@ terraform plan -out vpc.tfplan
 # Apply the deployment
 terraform apply "vpc.tfplan"
 
-# Do not destroy the VPC until you have completed the next module
+# Do not destroy the VPC until you have completed state migration module
 
-# Module 2 commands
+# Multiple provider module commands
 
 # Rename the peering configuration
 ren peering.tf.rename peering.tf
@@ -25,3 +25,11 @@ terraform plan -var peer_role_arn="PEERING_ROLE_ARN" -var destination_vpc_id="SE
 
 # Run terraform apply
 terraform apply "peer.tfplan"
+
+# State migration module
+
+# Rename the backend config file
+ren backend.tf.rename backend.tf
+
+# Update the region, bucket, and dynamodb table
+terraform init -backend-config="bucket=S3_BUCKET" -backend-config="region=AWS_REGION" -backend-config="dynamodb_table=TABLE_NAME"

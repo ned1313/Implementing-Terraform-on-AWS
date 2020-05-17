@@ -20,3 +20,5 @@ terraform plan -out roles.tfplan
 
 # Run terraform apply
 terraform apply roles.tfplan
+
+# Make note of the peer_role_arn, you'll need it in the next step
