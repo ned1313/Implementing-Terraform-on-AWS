@@ -13,4 +13,7 @@ terraform plan -out code.tfplan
 # Apply the deployment
 terraform apply "code.tfplan"
 
+# Make note of the code commit url
+# Clone the git repo locally and copy files in 5-code-commit-files to the repo
+# Commit changes to the repo
 

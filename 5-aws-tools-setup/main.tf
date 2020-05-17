@@ -22,6 +22,12 @@ variable "dynamodb_table_name" {
   description = "Name of dynamodb table for remote state locking"
 }
 
+variable "code_commit_user" {
+  type = string
+  description = "Username of user to grant Power User access to Code Commit"
+}
+
+
 locals {
   bucket_name = "${var.aws_bucket_prefix}-build-logs-${random_integer.rand.result}"
 }
@@ -47,6 +53,10 @@ data "aws_dynamodb_table" "state_table" {
   name = var.dynamodb_table_name
 }
 
+data "aws_iam_policy" "code_commit_power_user" {
+  arn = "arn:aws:iam::aws:policy/AWSCodeCommitPowerUser"
+}
+
 #############################################################################
 # RESOURCES
 #############################################################################  
@@ -59,6 +69,11 @@ resource "random_integer" "rand" {
 resource "aws_codecommit_repository" "vpc_code" {
   repository_name = "vpc-deploy"
   description     = "Code for deploying VPCs"
+}
+
+resource "aws_iam_user_policy_attachment" "code_commit_current" {
+  user = var.code_commit_user
+  policy_arn = data.aws_iam_policy.code_commit_power_user.arn
 }
 
 resource "aws_s3_bucket" "vpc_deploy_logs" {
@@ -336,3 +351,12 @@ resource "aws_codepipeline" "codepipeline" {
     }
   }
 }
+
+##################################################################################
+# OUTPUT
+##################################################################################
+
+output "code_commit_url" {
+  value = aws_codecommit_repository.vpc_code.clone_url_http
+}
+
