@@ -1,0 +1,351 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+ 
+    "Description": "Creates an API gateway that's backed by a Lambda function",
+ 
+    "Parameters": {
+       "APIName": {
+          "Description": "Name of the API to create",
+          "Type": "String",
+          "AllowedPattern": "[A-Za-z0-9]*",
+          "MinLength": "4",
+          "MaxLength": "2048",
+          "ConstraintDescription": "must contain only alphanumeric characters (at least four)"
+       },
+       "APIDescription": {
+          "Description": "Description of the API to create",
+          "Type": "String",
+          "Default": "No description provided. Provide 'APIDescription' param to override this."
+       },
+       "APIPath": {
+          "Description": "URL path for the API",
+          "Type": "String",
+          "Default": "api",
+          "AllowedPattern": "[A-Za-z0-9]*",
+          "MinLength": "1",
+          "MaxLength": "64",
+          "ConstraintDescription": "must contain only alphanumeric characters (1-64 chars)"
+       },
+       "APIStageName": {
+          "Description": "Stage name to deploy the API to",
+          "Type": "String",
+          "Default": "dev",
+          "AllowedPattern": "[A-Za-z0-9]*",
+          "MinLength": "1",
+          "MaxLength": "64",
+          "ConstraintDescription": "must contain only alphanumeric characters (1-64 chars)"
+       },
+       "LambdaCodeBucket": {
+          "Description": "Name of the S3 bucket that's storing the Lamba function's zip file",
+          "Type": "String"
+       },
+       "LambdaCodePath": {
+          "Description": "Path to the zip file of code for the Lambda function",
+          "Type": "String"
+       },
+       "APIGatewayCustomResourceARN": {
+          "Description": "The ARN pointing to the Lambda function that creates custom API gateway resources (install from https://apigatewaycloudformation.bynordenfelt.com/). Example: arn:aws:lambda:us-east-1:123456789012:function:APIGatewayCustomResource-LambdaFunction-ABCDEFG123",
+          "Type": "String"
+       },
+       "DynamoReadCapacityUnits": {
+          "Description": "Provisioned read throughput",
+          "Type": "Number",
+          "Default": "1",
+          "MinValue": "1",
+          "MaxValue": "10000",
+          "ConstraintDescription": "must be between 1 and 10000"
+       },
+       "DynamoWriteCapacityUnits": {
+          "Description": "Provisioned write throughput",
+          "Type": "Number",
+          "Default": "1",
+          "MinValue": "1",
+          "MaxValue": "10000",
+          "ConstraintDescription": "must be between 1 and 10000"
+       }
+    },
+ 
+    "Resources": {
+       "BackingLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+             "Code": {
+                "S3Bucket": { "Ref": "LambdaCodeBucket" },
+                "S3Key": { "Ref": "LambdaCodePath" }
+             },
+             "FunctionName": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, { "Ref": "APIName" } ] ] },
+             "Handler": "index.handler",
+             "MemorySize": "128",
+             "Role": { "Fn::GetAtt": [ "BackingLambdaExecutionRole", "Arn" ] },
+             "Runtime": "nodejs4.3",
+             "Timeout": "3"
+          }
+       },
+       "BackingLambdaInvokePermission": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+             "FunctionName": { "Fn::GetAtt": [ "BackingLambdaFunction", "Arn" ] },
+             "Action": "lambda:InvokeFunction",
+             "Principal": "apigateway.amazonaws.com"
+          }
+       },
+       "BackingLambdaExecutionRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+             "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                   {
+                      "Effect": "Allow",
+                      "Principal": {
+                         "Service": [ "lambda.amazonaws.com" ]
+                      },
+                      "Action": [ "sts:AssumeRole" ]
+                   }
+                ]
+             },
+             "Policies": [
+                {
+                   "PolicyName": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "UseDBPolicy" ] ] },
+                   "PolicyDocument": {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                         {
+                            "Effect": "Allow",
+                            "Action": [
+                               "dynamodb:DeleteItem",
+                               "dynamodb:GetItem",
+                               "dynamodb:PutItem",
+                               "dynamodb:Query",
+                               "dynamodb:Scan",
+                               "dynamodb:UpdateItem"
+                            ],
+                            "Resource": {
+                               "Fn::Join": [
+                                  "",
+                                  [
+                                     "arn:aws:dynamodb:",
+                                     { "Ref": "AWS::Region" },
+                                     ":",
+                                     { "Ref": "AWS::AccountId" },
+                                     ":table/",
+                                     { "Ref": "APIDynamoDBTable" }
+                                  ]
+                               ]
+                            }
+                         },
+                         {
+                            "Effect": "Allow",
+                            "Action": [
+                               "logs:CreateLogGroup",
+                               "logs:CreateLogStream",
+                               "logs:PutLogEvents"
+                            ],
+                            "Resource": "*"
+                         }
+                      ]
+                   }
+                }
+             ]
+          }
+       },
+       "MainAPI": {
+          "Type": "Custom::RestApi",
+          "Properties": {
+             "name": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, { "Ref": "APIName" } ] ] },
+             "description": { "Ref": "APIDescription" },
+             "ServiceToken": { "Ref": "APIGatewayCustomResourceARN" }
+          }
+       },
+       "MainAPIResource": {
+          "Type": "Custom::ApiResource",
+          "Properties": {
+             "ServiceToken": { "Ref": "APIGatewayCustomResourceARN" },
+             "restApiId": { "Ref": "MainAPI" },
+             "parentId": { "Fn::GetAtt": [ "MainAPI", "parentResourceId" ] },
+             "pathPart": { "Ref": "APIPath" },
+             "corsConfiguration": {
+                "allowMethods": [ "GET", "POST" ],
+                "allowHeaders": [ "x-my-header", "some-other-header" ],
+                "allowDefaultHeaders": true,
+                "allowOrigin": "*",
+                "exposeHeaders": [ "some-header", "x-another-header" ],
+                "maxAge": 1800
+             }
+          }
+       },
+       "APIMethodGet": {
+          "Type": "Custom::ApiMethod",
+          "Properties": {
+             "ServiceToken": { "Ref": "APIGatewayCustomResourceARN" },
+             "restApiId": { "Ref": "MainAPI" },
+             "resourceId": { "Ref": "MainAPIResource" },
+             "method": {
+                "httpMethod": "GET",
+                "parameters": [
+                   "querystring.sortBy",
+                   "header.x-test-header",
+                   "path.entityType"
+                ]
+             },
+             "integration": {
+                "type": "AWS",
+                "uri": {
+                   "Fn::Join": [
+                      ":",
+                      [
+                         "arn:aws:apigateway",
+                         { "Ref": "AWS::Region" },
+                         "lambda:path/2015-03-31/functions/arn:aws:lambda",
+                         { "Ref": "AWS::Region" },
+                         { "Ref": "AWS::AccountId" },
+                         "function",
+                         { "Fn::Join": [ "/", [ { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, { "Ref": "APIName" } ] ] }, "invocations" ] ] }
+                      ]
+                   ]
+                },
+                "httpMethod": "POST",
+                "requestTemplates": {
+                   "application/json": [ "input-pass-through-full", {
+                      "DynamoDBTableName": { "Ref": "APIDynamoDBTable" }
+                   } ]
+                },
+                "requestParameters": {
+                   "integration.request.querystring.sortBy": "'hardcodedValue'"
+                }
+             },
+             "responses": {
+                "default": {
+                   "statusCode": "200",
+                   "headers": {
+                      "X-Custom-Header": "'hardcodedValue'"
+                   }
+                },
+                ".*NotFound.*": {
+                   "statusCode": "404"
+                }
+             }
+          }
+       },
+       "APIMethodPost": {
+          "Type": "Custom::ApiMethod",
+          "Properties": {
+             "ServiceToken": { "Ref": "APIGatewayCustomResourceARN" },
+             "restApiId": { "Ref": "MainAPI" },
+             "resourceId": { "Ref": "MainAPIResource" },
+             "method": {
+                "httpMethod": "POST",
+                "parameters": [
+                   "querystring.sortBy",
+                   "header.x-test-header",
+                   "path.entityType"
+                ]
+             },
+             "integration": {
+                "type": "AWS",
+                "uri": {
+                   "Fn::Join": [
+                      ":",
+                      [
+                         "arn:aws:apigateway",
+                         { "Ref": "AWS::Region" },
+                         "lambda:path/2015-03-31/functions/arn:aws:lambda",
+                         { "Ref": "AWS::Region" },
+                         { "Ref": "AWS::AccountId" },
+                         "function",
+                         { "Fn::Join": [ "/", [ { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, { "Ref": "APIName" } ] ] }, "invocations" ] ] }
+                      ]
+                   ]
+                },
+                "httpMethod": "POST",
+                "requestTemplates": {
+                   "application/json": [ "input-pass-through-full", {
+                      "DynamoDBTableName": { "Ref": "APIDynamoDBTable" }
+                   } ]
+                },
+                "requestParameters": {
+                   "integration.request.querystring.sortBy": "'hardcodedValue'"
+                }
+             },
+             "responses": {
+                "default": {
+                   "statusCode": "200",
+                   "headers": {
+                      "X-Custom-Header": "'hardcodedValue'"
+                   }
+                },
+                ".*NotFound.*": {
+                   "statusCode": "404"
+                }
+             }
+          }
+       },
+       "DeployApi": {
+          "Type": "Custom::ApiDeploy",
+          "DependsOn": [ "APIMethodGet", "APIMethodPost" ],
+          "Properties": {
+             "ServiceToken": { "Ref": "APIGatewayCustomResourceARN" },
+             "restApiId": { "Ref": "MainAPI" },
+             "stageName": { "Ref": "APIStageName" },
+             "stageConfig": {
+                "cacheClusterEnabled": false
+             },
+             "methodSettings": {
+             },
+             "stageVariables": {
+                "testVar1": "testValue1",
+                "testVar2": "testValue2"
+             }
+          }
+       },
+       "APIDynamoDBTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+             "AttributeDefinitions": [
+                {
+                   "AttributeName": "GUID",
+                   "AttributeType": "S"
+                },
+                {
+                   "AttributeName": "DueDate",
+                   "AttributeType": "S"
+                }
+             ],
+             "KeySchema": [
+                {
+                   "AttributeName": "GUID",
+                   "KeyType": "HASH"
+                },
+                {
+                   "AttributeName": "DueDate",
+                   "KeyType": "RANGE"
+                }
+             ],
+             "ProvisionedThroughput": {
+                "ReadCapacityUnits": { "Ref": "DynamoReadCapacityUnits" },
+                "WriteCapacityUnits": { "Ref": "DynamoWriteCapacityUnits" }
+             }
+          }
+       }
+    },
+ 
+    "Outputs": {
+       "LambdaName": {
+          "Value": { "Ref": "BackingLambdaFunction" },
+          "Description": "The Lambda function"
+       },
+       "TableName": {
+          "Value": { "Ref": "APIDynamoDBTable" },
+          "Description": "The DynamoDB table"
+       },
+       "MainAPI": {
+          "Value": { "Ref": "MainAPI" },
+          "Description": "The main API gateway"
+       },
+       "APIDeployment": {
+          "Value": { "Ref": "DeployApi" },
+          "Description": "The deployment of the API"
+       }
+    }
+ }
+ 
