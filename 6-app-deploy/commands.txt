@@ -1,0 +1,3 @@
+# Create a profile for Joshua McGee
+aws configure --profile app
+

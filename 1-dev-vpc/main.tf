@@ -18,6 +18,12 @@ variable "public_subnets" {
   default = ["10.0.0.0/24", "10.0.1.0/24"]
 }
 
+variable "database_subnets" {
+  type = list(string)
+  default = ["10.0.8.0/24", "10.0.9.0/24"]
+}
+
+
 #############################################################################
 # PROVIDERS
 #############################################################################
@@ -44,8 +50,14 @@ module "vpc" {
   name = "dev-vpc"
   cidr = var.vpc_cidr_range
 
-  azs            = slice(data.aws_availability_zones.azs.names, 0, 1)
+  azs            = slice(data.aws_availability_zones.azs.names, 0, 2)
   public_subnets = var.public_subnets
+
+  # Database subnets
+  database_subnets  = var.database_subnets
+  database_subnet_group_tags = {
+    subnet_type = "database"
+  }
 
   tags = {
     Environment = "dev"
@@ -61,3 +73,13 @@ module "vpc" {
 output "vpc_id" {
   value = module.vpc.vpc_id
 }
+
+output "db_subnet_group" {
+  value = module.vpc.database_subnet_group
+}
+
+output "public_subnets" {
+  value = module.vpc.public_subnets
+}
+
+

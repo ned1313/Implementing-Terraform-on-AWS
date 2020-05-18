@@ -73,7 +73,7 @@ module "vpc_east" {
   name = "prod-vpc-east"
   cidr = var.vpc_cidr_range_east
 
-  azs            = slice(data.aws_availability_zones.azs_east.names, 0, 1)
+  azs            = slice(data.aws_availability_zones.azs_east.names, 0, 2)
   public_subnets = var.public_subnets_east
 
   providers = {
@@ -95,7 +95,7 @@ module "vpc_west" {
   name = "prod-vpc-west"
   cidr = var.vpc_cidr_range_west
 
-  azs            = slice(data.aws_availability_zones.azs_west.names, 0, 1)
+  azs            = slice(data.aws_availability_zones.azs_west.names, 0, 2)
   public_subnets = var.public_subnets_west
 
   providers = {
