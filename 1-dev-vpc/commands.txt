@@ -15,6 +15,8 @@ terraform apply "vpc.tfplan"
 
 # Do not destroy the VPC until you have completed state migration module
 
+###################################################################################################
+
 # Multiple provider module commands
 
 # Rename the peering configuration
@@ -25,6 +27,8 @@ terraform plan -var peer_role_arn="PEERING_ROLE_ARN" -var destination_vpc_id="SE
 
 # Run terraform apply
 terraform apply "peer.tfplan"
+
+###################################################################################################
 
 # State migration module
 
