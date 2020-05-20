@@ -22,6 +22,11 @@ variable "public_subnets_east" {
   default = ["10.10.0.0/24", "10.10.1.0/24"]
 }
 
+variable "database_subnets_east" {
+  type = list(string)
+  default = ["10.11.8.0/24", "10.11.9.0/24"]
+}
+
 variable "vpc_cidr_range_west" {
   type    = string
   default = "10.11.0.0/16"
@@ -30,6 +35,11 @@ variable "vpc_cidr_range_west" {
 variable "public_subnets_west" {
   type    = list(string)
   default = ["10.11.0.0/24", "10.11.1.0/24"]
+}
+
+variable "database_subnets_west" {
+  type = list(string)
+  default = ["10.11.8.0/24", "10.11.9.0/24"]
 }
 
 #############################################################################
@@ -76,6 +86,12 @@ module "vpc_east" {
   azs            = slice(data.aws_availability_zones.azs_east.names, 0, 2)
   public_subnets = var.public_subnets_east
 
+  # Database subnets
+  database_subnets  = var.database_subnets_east
+  database_subnet_group_tags = {
+    subnet_type = "database"
+  }
+
   providers = {
       aws = aws.east
   }
@@ -97,6 +113,12 @@ module "vpc_west" {
 
   azs            = slice(data.aws_availability_zones.azs_west.names, 0, 2)
   public_subnets = var.public_subnets_west
+
+  # Database subnets
+  database_subnets  = var.database_subnets_west
+  database_subnet_group_tags = {
+    subnet_type = "database"
+  }
 
   providers = {
       aws = aws.west
