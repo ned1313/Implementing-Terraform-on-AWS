@@ -23,7 +23,7 @@ terraform apply "vpc.tfplan"
 ren peering.tf.rename peering.tf
 
 # Run terraform plan
-terraform plan -var peer_role_arn="PEERING_ROLE_ARN" -var destination_vpc_id="SEC_VPC_ID" -out peer.tfplan
+terraform plan -var peer_role_arn="PEER_ROLE_ARN" -var destination_vpc_id="SEC_VPC_ID" -out peer.tfplan
 
 # Run terraform apply
 terraform apply "peer.tfplan"
@@ -36,4 +36,4 @@ terraform apply "peer.tfplan"
 ren backend.tf.rename backend.tf
 
 # Update the region, bucket, and dynamodb table
-terraform init -backend-config="bucket=S3_BUCKET" -backend-config="region=AWS_REGION" -backend-config="dynamodb_table=TABLE_NAME"
+terraform init -backend-config="bucket=globo-12251" -backend-config="region=us-east-1" -backend-config="dynamodb_table=globo-tfstatelock-12251"

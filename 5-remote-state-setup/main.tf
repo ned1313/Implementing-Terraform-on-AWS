@@ -53,16 +53,6 @@ locals {
   bucket_name         = "${var.aws_bucket_prefix}-${random_integer.rand.result}"
 }
 
-data "template_file" "bucket_policy" {
-  template = file("templates/bucket_policy.tpl")
-
-  vars = {
-    read_only_group_arn   = aws_iam_group.bucket_read_only.arn
-    full_access_group_arn = aws_iam_group.bucket_full_access.arn
-    s3_bucket             = local.bucket_name
-  }
-}
-
 resource "aws_dynamodb_table" "terraform_statelock" {
   name           = local.dynamodb_table_name
   read_capacity  = 20
@@ -84,7 +74,6 @@ resource "aws_s3_bucket" "state_bucket" {
     enabled = true
   }
 
-  #policy = data.template_file.bucket_policy.rendered
 }
 
 resource "aws_iam_group" "bucket_full_access" {

@@ -49,14 +49,12 @@ variable "database_subnets_west" {
 provider "aws" {
   version = "~> 2.0"
   region  = var.region_1
-  profile = "infra"
   alias = "east"
 }
 
 provider "aws" {
   version = "~> 2.0"
   region  = var.region_2
-  profile = "infra"
   alias = "west"
 }
 

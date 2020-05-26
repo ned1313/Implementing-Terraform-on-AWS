@@ -13,17 +13,17 @@ variable "region" {
 }
 
 variable "state_bucket" {
-  type = string
+  type        = string
   description = "Name of bucket for remote state"
 }
 
 variable "dynamodb_table_name" {
-  type = string
+  type        = string
   description = "Name of dynamodb table for remote state locking"
 }
 
 variable "code_commit_user" {
-  type = string
+  type        = string
   description = "Username of user to grant Power User access to Code Commit"
 }
 
@@ -72,7 +72,7 @@ resource "aws_codecommit_repository" "vpc_code" {
 }
 
 resource "aws_iam_user_policy_attachment" "code_commit_current" {
-  user = var.code_commit_user
+  user       = var.code_commit_user
   policy_arn = data.aws_iam_policy.code_commit_power_user.arn
 }
 
@@ -143,7 +143,16 @@ resource "aws_iam_role_policy" "cloud_build_policy" {
         "${aws_s3_bucket.vpc_deploy_logs.arn}",
         "${aws_s3_bucket.vpc_deploy_logs.arn}/*"
       ]
-    }
+    },
+    {
+            "Effect": "Allow",
+            "Resource": [
+                "${aws_codecommit_repository.vpc_code.arn}"
+            ],
+            "Action": [
+                "codecommit:GitPull"
+            ]
+        }
   ]
 }
 POLICY
@@ -238,18 +247,50 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Effect":"Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:GetObjectVersion",
-        "s3:GetBucketVersioning",
-        "s3:PutObject"
-      ],
-      "Resource": [
-        "${aws_s3_bucket.vpc_deploy_logs.arn}",
-        "${aws_s3_bucket.vpc_deploy_logs.arn}/*"
-      ]
-    },
+            "Action": [
+                "iam:PassRole"
+            ],
+            "Resource": "*",
+            "Effect": "Allow",
+            "Condition": {
+                "StringEqualsIfExists": {
+                    "iam:PassedToService": [
+                        "cloudformation.amazonaws.com",
+                        "elasticbeanstalk.amazonaws.com",
+                        "ec2.amazonaws.com",
+                        "ecs-tasks.amazonaws.com"
+                    ]
+                }
+            }
+        },
+                {
+            "Action": [
+                "codecommit:CancelUploadArchive",
+                "codecommit:GetBranch",
+                "codecommit:GetCommit",
+                "codecommit:GetUploadArchiveStatus",
+                "codecommit:UploadArchive"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        },
+        {
+            "Action": [
+                "elasticbeanstalk:*",
+                "ec2:*",
+                "elasticloadbalancing:*",
+                "autoscaling:*",
+                "cloudwatch:*",
+                "s3:*",
+                "sns:*",
+                "cloudformation:*",
+                "rds:*",
+                "sqs:*",
+                "ecs:*"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        },
     {
       "Effect": "Allow",
       "Action": [
@@ -300,8 +341,9 @@ resource "aws_codepipeline" "codepipeline" {
       owner            = "AWS"
       provider         = "CodeBuild"
       input_artifacts  = ["source_output"]
-      output_artifacts = ["plan_output"]
+      output_artifacts = ["Development_plan_output"]
       version          = "1"
+      run_order        = "1"
 
       configuration = {
         ProjectName = aws_codebuild_project.build_project.name
@@ -328,8 +370,9 @@ resource "aws_codepipeline" "codepipeline" {
       owner            = "AWS"
       provider         = "CodeBuild"
       input_artifacts  = ["source_output"]
-      output_artifacts = ["apply_output"]
+      output_artifacts = ["Development_apply_output"]
       version          = "1"
+      run_order        = "2"
 
       configuration = {
         ProjectName = aws_codebuild_project.build_project.name
@@ -350,6 +393,143 @@ resource "aws_codepipeline" "codepipeline" {
       }
     }
   }
+  ################### Uncomment after first deployment ###########################
+  stage {
+    name = "UAT"
+
+    action {
+      name             = "Plan"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["UAT_plan_output"]
+      version          = "1"
+      run_order        = "1"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.build_project.name
+        EnvironmentVariables = jsonencode(
+          [
+            {
+              name  = "TF_ACTION"
+              value = "PLAN"
+              type  = "PLAINTEXT"
+            },
+            {
+              name  = "WORKSPACE_NAME"
+              value = "UAT"
+              type  = "PLAINTEXT"
+            }
+          ]
+        )
+      }
+    }
+
+    action {
+      name             = "Apply"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["UAT_apply_output"]
+      version          = "1"
+      run_order        = "2"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.build_project.name
+        EnvironmentVariables = jsonencode(
+          [
+            {
+              name  = "TF_ACTION"
+              value = "APPLY"
+              type  = "PLAINTEXT"
+            },
+            {
+              name  = "WORKSPACE_NAME"
+              value = "UAT"
+              type  = "PLAINTEXT"
+            }
+          ]
+        )
+      }
+    }
+  }
+
+  stage {
+    name = "Production"
+
+    action {
+      name             = "Plan"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["Production_plan_output"]
+      version          = "1"
+      run_order        = "1"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.build_project.name
+        EnvironmentVariables = jsonencode(
+          [
+            {
+              name  = "TF_ACTION"
+              value = "PLAN"
+              type  = "PLAINTEXT"
+            },
+            {
+              name  = "WORKSPACE_NAME"
+              value = "Production"
+              type  = "PLAINTEXT"
+            }
+          ]
+        )
+      }
+    }
+
+    action {
+      name             = "Approve"
+      category         = "Approval"
+      owner            = "AWS"
+      provider         = "Manual"
+      input_artifacts  = []
+      output_artifacts = []
+      version          = "1"
+      run_order        = "2"
+    }
+
+    action {
+      name             = "Apply"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["Production_apply_output"]
+      version          = "1"
+      run_order        = "3"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.build_project.name
+        EnvironmentVariables = jsonencode(
+          [
+            {
+              name  = "TF_ACTION"
+              value = "APPLY"
+              type  = "PLAINTEXT"
+            },
+            {
+              name  = "WORKSPACE_NAME"
+              value = "Production"
+              type  = "PLAINTEXT"
+            }
+          ]
+        )
+      }
+    }
+  }
+
+  ################################################################################
 }
 
 ##################################################################################

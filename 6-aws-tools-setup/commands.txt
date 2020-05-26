@@ -14,6 +14,10 @@ terraform plan -out code.tfplan
 terraform apply "code.tfplan"
 
 # Make note of the code commit url
-# Clone the git repo locally and copy files in 5-code-commit-files to the repo
-# Commit changes to the repo
+# Clone the git repo locally and copy files in 7-code-commit-files to the repo
+git clone CODE_COMMIT_URL
+cp C:\gh\Implementing-Terraform-on-AWS\7-code-commit-files\* .
+
+# Commit changes to the repo and push
+
 

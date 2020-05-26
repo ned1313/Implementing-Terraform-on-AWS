@@ -1,6 +1,6 @@
 # You will be using two AWS profiles
 # infra will be a user in the infrastructure account
-# sec will be a user in the development account
+# sec will be a user in the security account
 # You will need to have created these users in the console already
 
 aws configure --profile infra
