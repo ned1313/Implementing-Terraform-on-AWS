@@ -39,6 +39,7 @@ locals {
 provider "aws" {
   version = "~> 2.0"
   region  = var.region
+  profile = "infra"
 }
 
 #############################################################################
@@ -47,6 +48,7 @@ provider "aws" {
 
 data "aws_s3_bucket" "state_bucket" {
   bucket = var.state_bucket
+
 }
 
 data "aws_dynamodb_table" "state_table" {
@@ -66,6 +68,10 @@ resource "random_integer" "rand" {
   max = 99999
 }
 
+###################################################
+# CODE COMMIT
+###################################################
+
 resource "aws_codecommit_repository" "vpc_code" {
   repository_name = "vpc-deploy"
   description     = "Code for deploying VPCs"
@@ -76,9 +82,14 @@ resource "aws_iam_user_policy_attachment" "code_commit_current" {
   policy_arn = data.aws_iam_policy.code_commit_power_user.arn
 }
 
+###################################################
+# CODE BUILD
+###################################################
+
 resource "aws_s3_bucket" "vpc_deploy_logs" {
-  bucket = local.bucket_name
-  acl    = "private"
+  bucket        = local.bucket_name
+  acl           = "private"
+  force_destroy = true
 }
 
 resource "aws_iam_role" "code_build_assume_role" {
@@ -191,6 +202,11 @@ resource "aws_codebuild_project" "build_project" {
     }
 
     environment_variable {
+      name = "TF_TABLE"
+      value = var.dynamodb_table_name
+    }
+
+    environment_variable {
       name  = "TF_REGION"
       value = var.region
     }
@@ -218,6 +234,10 @@ resource "aws_codebuild_project" "build_project" {
   source_version = "master"
 
 }
+
+###################################################
+# CODE PIPELINE
+###################################################
 
 resource "aws_iam_role" "codepipeline_role" {
   name = "vpc-codepipeline-role-${random_integer.rand.result}"
@@ -394,6 +414,7 @@ resource "aws_codepipeline" "codepipeline" {
     }
   }
   ################### Uncomment after first deployment ###########################
+  /*
   stage {
     name = "UAT"
 
@@ -528,7 +549,7 @@ resource "aws_codepipeline" "codepipeline" {
       }
     }
   }
-
+*/
   ################################################################################
 }
 
