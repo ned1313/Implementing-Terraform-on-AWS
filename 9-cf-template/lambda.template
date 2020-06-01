@@ -73,10 +73,6 @@
                     {
                         "AttributeName": "Timestamp",
                         "AttributeType": "S"
-                    },
-                    {
-                        "AttributeName": "Message",
-                        "AttributeType": "S"
                     }
                 ],
                 "KeySchema": [
@@ -182,7 +178,18 @@
                                     "Resource": [
                                         "*"
                                     ]
-                                }
+                                },
+                                {
+                                 "Effect": "Allow",
+                                 "Action": [
+                                     "ec2:CreateNetworkInterface",
+                                     "ec2:DescribeNetworkInterfaces",
+                                     "ec2:DeleteNetworkInterface"
+                                 ],
+                                 "Resource": [
+                                     "*"
+                                 ]
+                             }
                             ]
                         }
                     }
