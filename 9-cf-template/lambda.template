@@ -1,0 +1,250 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Sample Template DynamoDB_Table: This template demonstrates the creation of a DynamoDB table.  **WARNING** This template creates an Amazon DynamoDB table. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Parameters": {
+        "HashKeyElementName": {
+            "Description": "HashType PrimaryKey Name",
+            "Type": "String",
+            "Default": "Username",
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "MinLength": "1",
+            "MaxLength": "2048",
+            "ConstraintDescription": "must contain only alphanumberic characters"
+        },
+        "HashKeyElementType": {
+            "Description": "HashType PrimaryKey Type",
+            "Type": "String",
+            "Default": "S",
+            "AllowedPattern": "[S|N]",
+            "MinLength": "1",
+            "MaxLength": "1",
+            "ConstraintDescription": "must be either S or N"
+        },
+        "ReadCapacityUnits": {
+            "Description": "Provisioned read throughput",
+            "Type": "Number",
+            "Default": "5",
+            "MinValue": "5",
+            "MaxValue": "10000",
+            "ConstraintDescription": "must be between 5 and 10000"
+        },
+        "WriteCapacityUnits": {
+            "Description": "Provisioned write throughput",
+            "Type": "Number",
+            "Default": "10",
+            "MinValue": "5",
+            "MaxValue": "10000",
+            "ConstraintDescription": "must be between 5 and 10000"
+        },
+        "FunctionBucket": {
+            "Description": "S3 Bucket with Lambda function",
+            "Type": "String"
+        },
+        "FunctionKey": {
+            "Description": "S3 Key of Lambda function",
+            "Type": "String"
+        },
+        "LambdaSecurityGroup": {
+            "Description": "Security Group ID for Lambda",
+            "Type": "String"
+        },
+        "SubnetIds": {
+            "Description": "Subnet IDs for Lambda",
+            "Type": "CommaDelimitedList"
+        }
+    },
+    "Resources": {
+        "myDynamoDBTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+                "TableName": "GloboOrders",
+                "StreamSpecification": {
+                    "StreamViewType": "NEW_IMAGE"
+                },
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": {
+                            "Ref": "HashKeyElementName"
+                        },
+                        "AttributeType": {
+                            "Ref": "HashKeyElementType"
+                        }
+                    },
+                    {
+                        "AttributeName": "Timestamp",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": {
+                            "Ref": "HashKeyElementName"
+                        },
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "Timestamp",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": {
+                        "Ref": "ReadCapacityUnits"
+                    },
+                    "WriteCapacityUnits": {
+                        "Ref": "WriteCapacityUnits"
+                    }
+                }
+            }
+        },
+        "orderLambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Description": "Role used by Orders Lambda function",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName": "orderLambdaPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "lambda:InvokeFunction",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": {
+                                        "Fn::Join": [
+                                            ":",
+                                            [
+                                                "arn:aws:logs",
+                                                {
+                                                    "Ref": "AWS::Region"
+                                                },
+                                                {
+                                                    "Ref": "AWS::AccountId"
+                                                },
+                                                "*"
+                                            ]
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:DescribeStream",
+                                        "dynamodb:GetRecords",
+                                        "dynamodb:GetShardIterator",
+                                        "dynamodb:ListStreams"
+                                    ],
+                                    "Resource": {
+                                        "Fn::Join": [
+                                            "",
+                                            [
+                                                {
+                                                    "Fn::GetAtt": [
+                                                        "myDynamoDBTable",
+                                                        "Arn"
+                                                    ]
+                                                },
+                                                "/stream/*"
+                                            ]
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                 "Effect": "Allow",
+                                 "Action": [
+                                     "ec2:CreateNetworkInterface",
+                                     "ec2:DescribeNetworkInterfaces",
+                                     "ec2:DeleteNetworkInterface"
+                                 ],
+                                 "Resource": [
+                                     "*"
+                                 ]
+                             }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "orderLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "FunctionName": "publishOrders",
+                "Description": "Lambda function for orders",
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "FunctionBucket"
+                    },
+                    "S3Key": {
+                        "Ref": "FunctionKey"
+                    }
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "orderLambdaRole",
+                        "Arn"
+                    ]
+                },
+                "Handler": "publishOrders.handler",
+                "Runtime": "nodejs10.x",
+                "VpcConfig": {
+                    "SecurityGroupIds": [
+                        {
+                            "Ref": "LambdaSecurityGroup"
+                        }
+                    ],
+                    "SubnetIds": {
+                        "Ref": "SubnetIds"
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "TableName": {
+            "Value": {
+                "Ref": "myDynamoDBTable"
+            },
+            "Description": "Table name of the newly created DynamoDB table"
+        },
+        "FunctionArn": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "orderLambdaFunction",
+                    "Arn"
+                ]
+            },
+            "Description": "Arn of the Lambda Function"
+        }
+    }
+}

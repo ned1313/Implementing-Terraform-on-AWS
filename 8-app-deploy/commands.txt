@@ -1,0 +1,14 @@
+# Joshua McGee should have permissions to manage EC2, IAM, DynamoDB,
+# Lambda, CloudFormation, and RDS
+
+# Create a profile for Joshua McGee
+aws configure --profile app
+
+# Initialize the terraform configuration
+terraform init -backend-config="bucket=BUCKET_NAME" -backend-config="region=REGION_NAME" -backend-config="dynamodb_table=DYNAMODB_TABLE"
+
+# Plan the terraform deployment
+terraform plan -out app.tfplan
+
+# Apply the deployment
+terraform apply "app.tfplan"

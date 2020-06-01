@@ -1,0 +1,39 @@
+# Run the aws configure command to set your access and secret keys
+aws configure
+
+# Rename the terraform.tfvars.example file to terraform.tfvars and change the region
+# to your desired region
+
+# Initialize the terraform configuration
+terraform init
+
+# Plan the terraform deployment
+terraform plan -out vpc.tfplan
+
+# Apply the deployment
+terraform apply "vpc.tfplan"
+
+# Do not destroy the VPC until you have completed state migration module
+
+###################################################################################################
+
+# Multiple provider module commands
+
+# Rename the peering configuration
+ren peering.tf.rename peering.tf
+
+# Run terraform plan
+terraform plan -var peer_role_arn="PEER_ROLE_ARN" -var destination_vpc_id="SEC_VPC_ID" -out peer.tfplan
+
+# Run terraform apply
+terraform apply "peer.tfplan"
+
+###################################################################################################
+
+# State migration module
+
+# Rename the backend config file
+ren backend.tf.rename backend.tf
+
+# Update the region, bucket, and dynamodb table
+terraform init -backend-config="bucket=BUCKET_NAME" -backend-config="region=REGION_NAME" -backend-config="dynamodb_table=TABLE_NAME"

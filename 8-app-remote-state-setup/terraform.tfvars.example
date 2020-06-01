@@ -1,0 +1,7 @@
+full_access_users = ["JoMcGee"]
+
+read_only_users = ["ElVasquez"]
+
+aws_bucket_prefix = "globo-app"
+
+aws_dynamodb_table = "globo-app-tfstatelock"

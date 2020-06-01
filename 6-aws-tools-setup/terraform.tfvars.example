@@ -1,0 +1,7 @@
+region = "us-east-1"
+
+state_bucket = "STATE_BUCKET_NAME"
+
+dynamodb_table_name = "DYNAMODB_TABLE_NAME"
+
+code_commit_user = "USERNAME"

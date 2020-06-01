@@ -1,0 +1,31 @@
+version: 0.2
+
+env:
+  variables:
+    TF_INPUT: "0"
+    TF_IN_AUTOMATION: "YES"
+    
+phases:
+  install:
+    runtime-versions:
+      nodejs: latest
+    commands:
+      - cd /usr/bin
+      - curl -s -qL -o terraform.zip https://releases.hashicorp.com/terraform/${TF_VERSION_INSTALL}/terraform_${TF_VERSION_INSTALL}_linux_amd64.zip
+      - unzip terraform.zip
+      - cd "$CODEBUILD_SRC_DIR"
+      - chmod a+x *.sh
+      - cp ./terraform_actions.sh /usr/bin
+
+  build:
+    commands:
+      - cd "$CODEBUILD_SRC_DIR"
+      - terraform version
+      - terraform init -backend-config="bucket=${TF_BUCKET}" -backend-config="region=${TF_REGION}" -backend-config="dynamodb_table=${TF_TABLE}"
+      - echo ${TF_ACTION}
+      - terraform_actions.sh
+
+artifacts:
+  files:
+    - tf_output.txt
+

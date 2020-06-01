@@ -1,0 +1,10 @@
+# Rename terraform.tfvars.example to terraform.tfvars and update values
+
+# Initialize the terraform configuration
+terraform init -backend-config="bucket=_BUCKET_NAME" -backend-config="region=REGION_NAME" -backend-config="dynamodb_table=DYNAMODB_TABLE"
+
+# Plan the terraform deployment
+terraform plan -out stack.tfplan
+
+# Apply the deployment
+terraform apply "stack.tfplan"

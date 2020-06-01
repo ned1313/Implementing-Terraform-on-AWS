@@ -1,0 +1,24 @@
+# You will be using two AWS profiles
+# infra will be a user in the infrastructure account
+# sec will be a user in the security account
+# You will need to have created these users in the console already
+
+aws configure --profile infra
+
+# Provide the Access and Secret keys
+
+aws configure --profile sec
+
+# Provide the Access and Secret keys
+
+# Initialize terraform
+
+terraform init
+
+# Run terraform plan
+terraform plan -out roles.tfplan
+
+# Run terraform apply
+terraform apply roles.tfplan
+
+# Make note of the peer_role_arn, you'll need it in the next step
