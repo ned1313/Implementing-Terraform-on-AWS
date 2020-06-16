@@ -1,7 +1,3 @@
-# Deploy an ASG to two public subnets with nginx installed
-
-# Deploy RDS with a replica to two db subnets
-
 ##################################################################################
 # VARIABLES
 ##################################################################################
@@ -220,6 +216,13 @@ resource "aws_launch_configuration" "web_servers" {
   user_data       = file("${path.module}/user_data.txt")
 }
 
+resource "aws_lb_target_group" "web_servers" {
+  name     = "web-servers-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.terraform_remote_state.network.outputs.vpc_id
+}
+
 resource "aws_autoscaling_group" "web_servers" {
   name = "web-servers-asg"
 
@@ -238,12 +241,6 @@ resource "aws_autoscaling_group" "web_servers" {
 
 }
 
-resource "aws_lb_target_group" "web_servers" {
-  name     = "web-servers-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = data.terraform_remote_state.network.outputs.vpc_id
-}
 
 ###############################################
 # Applicaiton load balancer

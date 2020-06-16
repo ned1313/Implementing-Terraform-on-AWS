@@ -2,9 +2,31 @@
 # VARIABLES
 ##################################################################################
 
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
+
 variable "aws_bucket_prefix" {
   type    = string
   default = "globo"
+}
+
+variable "network_state_bucket" {
+  type        = string
+  description = "name of bucket used for network state"
+}
+
+variable "network_state_key" {
+  type        = string
+  description = "name of key used for network state"
+  default     = "networking/dev-vpc/terraform.tfstate"
+}
+
+variable "network_state_region" {
+  type        = string
+  description = "region used for network state"
+  default     = "us-east-1"
 }
 
 locals {
@@ -71,13 +93,22 @@ resource "aws_security_group" "lambda_sg" {
 
 resource "aws_cloudformation_stack" "orders_stack" { 
   name = "orders-stack"
+  capabilities = ["CAPABILITY_IAM"]
 
   parameters = {
       FunctionBucket = local.bucket_name
       FunctionKey = "publishOrders.zip"
       LambdaSecurityGroup = aws_security_group.lambda_sg.id
-      SubnetIds = data.terraform_remote_state.network.outputs.public_subnets
+      SubnetIds = join(",",data.terraform_remote_state.network.outputs.public_subnets)
   }
 
   template_body = file("${path.module}/lambda.template")
+}
+
+##################################################################################
+# OUTPUT
+##################################################################################
+
+output "template_output" {
+  value = aws_cloudformation_stack.orders_stack.outputs
 }
