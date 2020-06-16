@@ -24,7 +24,7 @@ variable "public_subnets_east" {
 
 variable "database_subnets_east" {
   type = list(string)
-  default = ["10.11.8.0/24", "10.11.9.0/24"]
+  default = ["10.10.8.0/24", "10.10.9.0/24"]
 }
 
 variable "vpc_cidr_range_west" {
