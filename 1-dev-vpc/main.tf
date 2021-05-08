@@ -28,8 +28,19 @@ variable "database_subnets" {
 # PROVIDERS
 #############################################################################
 
+# for terraform v0.13 and later
+# specify version in this block
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+  }
+}
+
+# configure your provider in this block
 provider "aws" {
-  version = "~> 2.0"
   region  = var.region
 }
 
@@ -45,7 +56,7 @@ data "aws_availability_zones" "azs" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.33.0"
+  version = ">= 2.58.0"
 
   name = "dev-vpc"
   cidr = var.vpc_cidr_range
