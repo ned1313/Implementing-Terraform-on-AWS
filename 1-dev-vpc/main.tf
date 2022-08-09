@@ -19,7 +19,7 @@ variable "public_subnets" {
 }
 
 variable "database_subnets" {
-  type = list(string)
+  type    = list(string)
   default = ["10.0.8.0/24", "10.0.9.0/24"]
 }
 
@@ -29,8 +29,7 @@ variable "database_subnets" {
 #############################################################################
 
 provider "aws" {
-  version = "~> 2.0"
-  region  = var.region
+  region = var.region
 }
 
 #############################################################################
@@ -45,7 +44,7 @@ data "aws_availability_zones" "azs" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.33.0"
+  version = "~> 3.0"
 
   name = "dev-vpc"
   cidr = var.vpc_cidr_range
@@ -54,7 +53,7 @@ module "vpc" {
   public_subnets = var.public_subnets
 
   # Database subnets
-  database_subnets  = var.database_subnets
+  database_subnets = var.database_subnets
   database_subnet_group_tags = {
     subnet_type = "database"
   }

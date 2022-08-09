@@ -23,7 +23,7 @@ variable "public_subnets_east" {
 }
 
 variable "database_subnets_east" {
-  type = list(string)
+  type    = list(string)
   default = ["10.10.8.0/24", "10.10.9.0/24"]
 }
 
@@ -38,7 +38,7 @@ variable "public_subnets_west" {
 }
 
 variable "database_subnets_west" {
-  type = list(string)
+  type    = list(string)
   default = ["10.11.8.0/24", "10.11.9.0/24"]
 }
 
@@ -47,15 +47,13 @@ variable "database_subnets_west" {
 #############################################################################
 
 provider "aws" {
-  version = "~> 2.0"
-  region  = var.region_1
-  alias = "east"
+  region = var.region_1
+  alias  = "east"
 }
 
 provider "aws" {
-  version = "~> 2.0"
-  region  = var.region_2
-  alias = "west"
+  region = var.region_2
+  alias  = "west"
 }
 
 #############################################################################
@@ -63,11 +61,11 @@ provider "aws" {
 #############################################################################
 
 data "aws_availability_zones" "azs_east" {
-    provider = aws.east
+  provider = aws.east
 }
 
 data "aws_availability_zones" "azs_west" {
-    provider = aws.west
+  provider = aws.west
 }
 
 #############################################################################
@@ -76,7 +74,7 @@ data "aws_availability_zones" "azs_west" {
 
 module "vpc_east" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.33.0"
+  version = "~> 3.0"
 
   name = "prod-vpc-east"
   cidr = var.vpc_cidr_range_east
@@ -85,18 +83,18 @@ module "vpc_east" {
   public_subnets = var.public_subnets_east
 
   # Database subnets
-  database_subnets  = var.database_subnets_east
+  database_subnets = var.database_subnets_east
   database_subnet_group_tags = {
     subnet_type = "database"
   }
 
   providers = {
-      aws = aws.east
+    aws = aws.east
   }
 
   tags = {
     Environment = "prod"
-    Region = "east"
+    Region      = "east"
     Team        = "infra"
   }
 
@@ -104,7 +102,7 @@ module "vpc_east" {
 
 module "vpc_west" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.33.0"
+  version = "~> 3.0"
 
   name = "prod-vpc-west"
   cidr = var.vpc_cidr_range_west
@@ -113,18 +111,18 @@ module "vpc_west" {
   public_subnets = var.public_subnets_west
 
   # Database subnets
-  database_subnets  = var.database_subnets_west
+  database_subnets = var.database_subnets_west
   database_subnet_group_tags = {
     subnet_type = "database"
   }
 
   providers = {
-      aws = aws.west
+    aws = aws.west
   }
 
   tags = {
     Environment = "prod"
-    Region = "west"
+    Region      = "west"
     Team        = "infra"
   }
 

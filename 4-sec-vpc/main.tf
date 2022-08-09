@@ -7,7 +7,6 @@ variable "region" {
   default = "us-east-1"
 }
 
-
 variable "vpc_cidr_range" {
   type    = string
   default = "10.0.0.0/16"
@@ -33,7 +32,6 @@ variable "intra_subnets" {
 #############################################################################
 
 provider "aws" {
-  version = "~> 2.0"
   region  = var.region
   profile = "sec"
 }
@@ -52,7 +50,7 @@ data "aws_availability_zones" "azs" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.33.0"
+  version = "~> 3.0"
 
   name = "sec-vpc"
   cidr = var.vpc_cidr_range
@@ -68,10 +66,6 @@ module "vpc" {
   }
 
 }
-
-
-
-
 
 #############################################################################
 # OUTPUTS

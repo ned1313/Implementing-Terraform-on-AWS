@@ -27,6 +27,11 @@ variable "code_commit_user" {
   description = "Username of user to grant Power User access to Code Commit"
 }
 
+variable "codebuild_terraform_version" {
+  type        = string
+  description = "Version of Terraform to use for CodeBuild"
+  default     = "1.2.3"
+}
 
 locals {
   bucket_name = "${var.aws_bucket_prefix}-build-logs-${random_integer.rand.result}"
@@ -37,7 +42,6 @@ locals {
 #############################################################################
 
 provider "aws" {
-  version = "~> 2.0"
   region  = var.region
   profile = "infra"
 }
@@ -88,8 +92,12 @@ resource "aws_iam_user_policy_attachment" "code_commit_current" {
 
 resource "aws_s3_bucket" "vpc_deploy_logs" {
   bucket        = local.bucket_name
-  acl           = "private"
   force_destroy = true
+}
+
+resource "aws_s3_bucket_acl" "vpc_deploy_logs" {
+  bucket = aws_s3_bucket.vpc_deploy_logs.id
+  acl    = "private"
 }
 
 resource "aws_iam_role" "code_build_assume_role" {
@@ -193,7 +201,7 @@ resource "aws_codebuild_project" "build_project" {
 
     environment_variable {
       name  = "TF_VERSION_INSTALL"
-      value = "0.12.24"
+      value = var.codebuild_terraform_version
     }
 
     environment_variable {
@@ -202,7 +210,7 @@ resource "aws_codebuild_project" "build_project" {
     }
 
     environment_variable {
-      name = "TF_TABLE"
+      name  = "TF_TABLE"
       value = var.dynamodb_table_name
     }
 
@@ -231,7 +239,7 @@ resource "aws_codebuild_project" "build_project" {
     location = aws_codecommit_repository.vpc_code.clone_url_http
   }
 
-  source_version = "master"
+  source_version = "main"
 
 }
 
@@ -347,7 +355,7 @@ resource "aws_codepipeline" "codepipeline" {
 
       configuration = {
         RepositoryName = aws_codecommit_repository.vpc_code.repository_name
-        BranchName     = "master"
+        BranchName     = "main"
       }
     }
   }

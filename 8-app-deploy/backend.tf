@@ -1,5 +1,6 @@
 terraform {
-    backend "s3" {
-        key = "app/terraform.tfstate"
-    }
+  backend "s3" {
+    key = "app/terraform.tfstate"
+    profile = "app"
+  }
 }

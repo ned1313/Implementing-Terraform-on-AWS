@@ -38,7 +38,6 @@ locals {
 ##################################################################################
 
 provider "aws" {
-  version = "~>2.0"
   region  = var.region
   profile = "app"
 }
@@ -69,16 +68,21 @@ resource "random_integer" "rand" {
 
 resource "aws_s3_bucket" "lambda_functions" {
   bucket        = local.bucket_name
-  acl           = "private"
   force_destroy = true
 }
 
+resource "aws_s3_bucket_acl" "lambda_functions" {
+  bucket = aws_s3_bucket.lambda_functions.id
+  acl    = "private"
+}
+
+
 # Put the Lambda function in the S3 bucket
 
-resource "aws_s3_bucket_object" "lambda_function" {
-  key        = "publishOrders.zip"
-  bucket     = aws_s3_bucket.lambda_functions.id
-  source     = "publishOrders.zip"
+resource "aws_s3_object" "lambda_function" {
+  key    = "publishOrders.zip"
+  bucket = aws_s3_bucket.lambda_functions.id
+  source = "${path.module}/publishOrders.zip"
 }
 
 # Create a Security Group for Lambda
@@ -91,15 +95,15 @@ resource "aws_security_group" "lambda_sg" {
 
 # Deploy the template
 
-resource "aws_cloudformation_stack" "orders_stack" { 
-  name = "orders-stack"
+resource "aws_cloudformation_stack" "orders_stack" {
+  name         = "orders-stack"
   capabilities = ["CAPABILITY_IAM"]
 
   parameters = {
-      FunctionBucket = local.bucket_name
-      FunctionKey = "publishOrders.zip"
-      LambdaSecurityGroup = aws_security_group.lambda_sg.id
-      SubnetIds = join(",",data.terraform_remote_state.network.outputs.public_subnets)
+    FunctionBucket      = local.bucket_name
+    FunctionKey         = "publishOrders.zip"
+    LambdaSecurityGroup = aws_security_group.lambda_sg.id
+    SubnetIds           = join(",", data.terraform_remote_state.network.outputs.public_subnets)
   }
 
   template_body = file("${path.module}/lambda.template")

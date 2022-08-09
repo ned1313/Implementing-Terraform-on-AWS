@@ -16,7 +16,6 @@ variable "peer_role_arn" {
 ############################################################################# 
 
 provider "aws" {
-  version = "~> 2.0"
   region  = var.region
   alias   = "peer"
   profile = "infra"

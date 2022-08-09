@@ -16,14 +16,12 @@ variable "peering_users" {
 #############################################################################
 
 provider "aws" {
-  version = "~> 2.0"
   region  = var.region
   alias   = "infra"
   profile = "infra"
 }
 
 provider "aws" {
-  version = "~> 2.0"
   region  = var.region
   alias   = "sec"
   profile = "sec"

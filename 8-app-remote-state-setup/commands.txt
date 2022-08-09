@@ -1,3 +1,9 @@
+# Joshua McGee should have permissions to manage EC2, IAM, DynamoDB,
+# Lambda, CloudFormation, and RDS
+
+# Create a profile for Joshua McGee, this will be used to create and access the S3 bucket for state
+aws configure --profile app
+
 terraform init
 
 terraform validate
