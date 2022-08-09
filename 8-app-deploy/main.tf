@@ -146,7 +146,7 @@ module "rds" {
 
   # Database Deletion Protection
   deletion_protection = false
-  skip_final_snapshot     = true
+  skip_final_snapshot = true
 
   parameters = [
     {

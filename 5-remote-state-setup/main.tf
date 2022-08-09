@@ -35,7 +35,7 @@ variable "read_only_users" {
 
 provider "aws" {
   profile = "infra"
-  region = var.region
+  region  = var.region
 }
 
 ##################################################################################
