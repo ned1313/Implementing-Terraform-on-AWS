@@ -18,8 +18,8 @@ terraform apply "code.tfplan"
 # Clone the git repo locally and copy files in 7-code-commit-files to the repo
 
 git clone CODE_COMMIT_URL
-cp C:\gh\Implementing-Terraform-on-AWS\7-code-commit-files\* .
+cp PATH_TO_YOUR_EXERCISE_FILES\7-code-commit-files\* . # <-- Adjust to the path of your exercise files
 
-# Commit changes to the repo and push
+# Create a branch called main and publish the branch to CodeCommit
 
 

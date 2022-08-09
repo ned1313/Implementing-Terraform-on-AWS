@@ -32,7 +32,6 @@ variable "network_state_region" {
 ##################################################################################
 
 provider "aws" {
-  version = "~>2.0"
   region  = var.region
   profile = "app"
 }
@@ -111,16 +110,16 @@ resource "aws_security_group_rule" "egress_rds" {
 
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "2.15.0"
+  version = "~> 5.0"
 
   identifier = "globo-dev-db"
 
   engine            = "mysql"
-  engine_version    = "5.7.19"
-  instance_class    = "db.t2.large"
+  engine_version    = "5.7.38"
+  instance_class    = "db.m5.large"
   allocated_storage = 5
 
-  name                   = "globoappdb"
+  db_name                = "globoappdb"
   username               = "globoadmin"
   password               = "YourPwdShouldBeLongAndSecure!"
   port                   = "3306"
@@ -145,11 +144,9 @@ module "rds" {
   # DB option group
   major_engine_version = "5.7"
 
-  # Snapshot name upon DB deletion
-  final_snapshot_identifier = "globo-app-db"
-
   # Database Deletion Protection
   deletion_protection = false
+  skip_final_snapshot = true
 
   parameters = [
     {

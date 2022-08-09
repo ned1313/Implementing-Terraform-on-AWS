@@ -216,7 +216,7 @@
                     ]
                 },
                 "Handler": "publishOrders.handler",
-                "Runtime": "nodejs10.x",
+                "Runtime": "nodejs16.x",
                 "VpcConfig": {
                     "SecurityGroupIds": [
                         {
